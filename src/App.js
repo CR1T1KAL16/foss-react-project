@@ -3,13 +3,13 @@ import { useState, useEffect } from "react";
 
 
 const App = () => {
-  const [notes, setNotes] = useState  ();
+  const [notes, setNotes] = useState([]);
 
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [deadline, setDeadline] = useState(null);
     const [selectedNote, setSelectedNote] = useState(null);
-    const [isDeadlineCrossed, setIsDeadlineCrossed] = useState(false);
+    const [deadlineStatus, setDeadlineStatus] = useState({});
 
     const handleNoteClick = (note) => {
       setSelectedNote(note);
@@ -72,25 +72,28 @@ const App = () => {
       const updatedNotes = notes.filter((note) => note.id !== noteId);
       setNotes(updatedNotes);
     };
-     
-    useEffect(() => {
-      checkDeadline();
-    }, [deadline]);
 
-    function checkDeadline() {
+
+    const checkDeadline = (note) => {
       const now = new Date();
-      const deadlineDate = new Date(deadline);
-      if (deadlineDate < now) {
-        setIsDeadlineCrossed(true);
-      } else {
-        setIsDeadlineCrossed(false);
-      }
-    }
+      const deadlineDate = new Date(note.deadline);
+      const isCrossed = deadlineDate < now;
+      setDeadlineStatus((prevStatus) => ({
+        ...prevStatus,
+        [note.id]: isCrossed,
+      }));
+    };
+  
+
+    useEffect(() => {
+      notes.forEach((note) => {
+        checkDeadline(note);
+      });
+    }, [notes]);
 
   return (
     <div className="app-container">
       <form className="note-form" onSubmit={(event) => (selectedNote ? handleUpdateNote(event) : handleAddNote(event))}>
-      <div className={`note ${isDeadlineCrossed ? "deadline-crossed" : ""}`}></div>
       <input
         value={title}
         onChange={(event) => setTitle(event.target.value)}
@@ -120,15 +123,14 @@ const App = () => {
       </form>
       <div className="notes-grid">
         {notes?.map((note) => (
-          <div 
-          className="note-item"
+          <div className={`note-item ${deadlineStatus[note.id] ? "deadline-crossed" : ""}`}
           onClick={()=> handleNoteClick(note)}>
             <div className="notes-header">
               <button onClick={(event) => deleteNote(event, note.id)}>x</button>
             </div>
            <h2>{note.title}</h2>
            <div className="deadline">{note.deadline}</div>
-           <p>{note.content}</p>
+              <p>{note.content}</p>
           </div>
         ))}
       </div>
